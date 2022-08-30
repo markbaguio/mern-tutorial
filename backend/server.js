@@ -18,6 +18,7 @@ app.use(express.urlencoded({ extended: false }));
 
 //Initialize and execute routes.
 app.use("/api/goals", require("./routes/goalRoutes"));
+app.use("/api/users", require("./routes/userRoutes"));
 
 //overwrite the default built in error handler from express
 app.use(errorHandler);
