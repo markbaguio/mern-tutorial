@@ -23,6 +23,10 @@ app.use("/api/users", require("./routes/userRoutes"));
 //overwrite the default built in error handler from express
 app.use(errorHandler);
 
+app.get("/", (req, res) => {
+  res.send("Server is up and running.");
+});
+
 //server
 app.listen(PORT, () => {
   console.log(`Server started on port ${PORT}.`);

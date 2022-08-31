@@ -32,19 +32,23 @@ const registerUser = asyncHandler(async (req, res) => {
 
   //Create the User
   const user = await User.create({
-    name,
+    name: name,
     password: hashedPassword,
-    email,
+    email: email,
   });
 
   if (user) {
-    //the user is created send a response that notifies the user.
+    //if the user is created send a response that notifies the user.
     res.status(201).json({
       message: "User has been successfully created.",
       _id: user.id,
       name: user.name,
       email: user.email,
+      JWTtoken: generateToken(user._id),
     });
+  } else {
+    res.status(400);
+    throw new Error("Invalid user data.");
   }
 });
 
@@ -52,17 +56,42 @@ const registerUser = asyncHandler(async (req, res) => {
 // @route POST /api/users/login
 // @access Public
 const loginUser = asyncHandler(async (req, res) => {
-  res.json({ message: "logged in" });
+  const { email, password } = req.body;
+
+  //check for user email
+  const user = await User.findOne({ email });
+
+  if (user && (await bcrypt.compare(password, user.password))) {
+    //brcypt.compare compares the string password and the hashed password.
+    //if the email and the password match, its authenticated.
+    res.json({
+      message: "Login successful.",
+      _id: user.id,
+      name: user.name,
+      email: user.email,
+      JWTtoken: generateToken(user._id),
+    });
+  } else {
+    res.status(400);
+    throw new Error("Invalid credentials.");
+  }
 });
 
 // @description Get user data
 // @route GET /api/users/me
-// @access Public
+// @access Private
 const getMe = asyncHandler(async (req, res) => {
   res.json({
     message: "user data.",
   });
 });
+
+// Generate JWT
+const generateToken = (id) => {
+  return jwt.sign({ id }, process.env.JWT_SECRET, {
+    expiresIn: "7 days",
+  });
+};
 
 module.exports = {
   registerUser,
