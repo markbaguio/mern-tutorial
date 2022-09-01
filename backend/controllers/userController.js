@@ -4,7 +4,7 @@ const asyncHandler = require("express-async-handler");
 const User = require("../models/userModel");
 
 /**
- * Mongoose and Bcryptjs are asynchronous.
+ * Mongoose and Bcryptjs methods are asynchronous.
  */
 
 // @description Register a new user
@@ -79,10 +79,20 @@ const loginUser = asyncHandler(async (req, res) => {
 
 // @description Get user data
 // @route GET /api/users/me
-// @access Private
+// @access Private - protected using JWT
 const getMe = asyncHandler(async (req, res) => {
-  res.json({
-    message: "user data.",
+  /**
+   *  req.user.id is available in this controller
+   *  because of the protect middleware
+   *  that was passed in the getMe route.
+   */
+  const { _id, name, email } = await User.findById(req.user.id);
+
+  res.status(200).json({
+    _id: _id,
+    name: name,
+    email: email,
+    message: "Login successful.",
   });
 });
 
