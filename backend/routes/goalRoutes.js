@@ -6,6 +6,7 @@ const {
   updateGoal,
   deleteGoal,
 } = require("../controllers/goalController");
+const protect = require("../middleware/authMiddleware");
 
 /**
  *  since GET goals and SET goals are almost the same syntax wise.
@@ -14,8 +15,8 @@ const {
  *  also use .route method to clean it up a little more.
  */
 
-ROUTER.route("/").get(getGoals).post(setGoal);
-ROUTER.route("/:id").put(updateGoal).delete(deleteGoal);
+ROUTER.route("/").get(protect, getGoals).post(protect, setGoal);
+ROUTER.route("/:id").put(protect, updateGoal).delete(protect, deleteGoal);
 
 //get goals
 //ROUTER.get("/", getGoals);

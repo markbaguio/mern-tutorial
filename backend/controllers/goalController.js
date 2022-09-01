@@ -1,5 +1,6 @@
 const asyncHandler = require("express-async-handler");
 const Goal = require("../models/goalModel");
+const User = require("../models/userModel");
 /**
  * if we dont wanna use try-catch we can utilize express-async-handler package.
  * express-async-handler is just like try-catch, it is used to
@@ -16,8 +17,8 @@ const Goal = require("../models/goalModel");
 // @route GET /api/goals
 // @access Private after authentication
 const getGoals = asyncHandler(async (req, res) => {
-  const goals = await Goal.find({});
-  res.status(200).json(goals);
+  const goals = await Goal.find({ user: req.user.id });
+  res.status(200).json({ user: req.user.name, goals: goals });
 });
 
 // @description Set goals
@@ -32,6 +33,7 @@ const setGoal = asyncHandler(async (req, res) => {
 
   const newGoal = await Goal.create({
     text: req.body.text,
+    user: req.user.id,
   });
 
   res.status(200).json(newGoal);
@@ -49,11 +51,26 @@ const updateGoal = asyncHandler(async (req, res) => {
     throw new Error("Goal not found.");
   }
 
+  //get user's id
+  const user = await User.findById(req.user.id); //logged in user's id.
+
+  //check for user
+  if (!user) {
+    res.status(401);
+    throw new Error("User not found.");
+  }
+
+  //Make sure the logged in user matches the goal creator.
+  if (goal.user.toString() !== user.id) {
+    res.status(401);
+    throw new Error("User is not authorized.");
+  }
+
   const updatedGoal = await Goal.findByIdAndUpdate(req.params.id, req.body, {
     new: true,
   });
 
-  res.status(200).json(updatedGoal);
+  res.status(200).json({ status: "Goal Updated.", goal: updatedGoal });
 });
 
 // @description delete goal
@@ -67,13 +84,34 @@ const deleteGoal = asyncHandler(async (req, res) => {
     throw new Error("Goal not found.");
   }
 
+  //get user's id
+  const user = await User.findById(req.user.id); //logged in user's id.
+
+  //check for user
+  if (!user) {
+    res.status(401);
+    throw new Error("User not found.");
+  }
+
+  //Make sure the logged user matches the goal user.
+  if (goal.user.toString() !== user.id) {
+    res.status(401);
+    throw new Error("User is not authorized.");
+  }
+
   await goal.remove();
+
   res.status(200).json({
     message: `The goal with the id of ${req.params.id} has been deleted.`,
     id: req.params.id,
   });
 
-  res.status(200).json({ message: `Delete goal ${req.params.id}` });
+  /**
+   * res.status(200).json({ message: `Delete goal ${req.params.id}` }); -> this will throw an error.
+   * if you send another status or any response after the first one,
+   * it will throw an HTTP error: "Error [ERR_HTTP_HEADERS_SENT]: Cannot set headers after they are sent to the client".
+   * Basically, you should not send a response after the process is finished.
+   */
 });
 
 module.exports = {
